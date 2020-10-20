@@ -1,0 +1,30 @@
+[Unit]
+PartOf=php-micro.service
+Description=The PHP 7.3 FastCGI Process Manager
+Documentation=man:php-fpm7.3(8)
+After=network.target
+
+[Service]
+EnvironmentFile=-/etc/zingle/php-micro.conf
+Type=notify
+PIDFile=%t/fpm@%I/php-fpm.pid
+ExecStart=/usr/sbin/php-fpm7.3 --nodaemonize --fpm-config /run/fpm@%I/php-fpm.conf -R
+ExecReload=/bin/kill -USR2 $MAINPID
+
+# create temporary directory for instance
+# needed for both of the following sections
+RuntimeDirectory=fpm@%I
+
+# setup writable storage path for service
+ExecStartPre=/usr/bin/mkdir %t/fpm@%I/var
+Environment=STORAGE_PATH=%t/fpm@%I/var
+
+# setup FPM configuration for the instance before starting
+ExecStartPre=/usr/bin/mkdir %t/fpm@%I/pool.d %t/fpm@%I/conf.d
+ExecStartPre=/usr/bin/cp -rT --preserve=links /etc/php/current/fpm %t/fpm@%I
+ExecStartPre=/usr/bin/sed -i 's/^listen =.*$/listen = 127.0.0.1:%I/' %t/fpm@%I/pool.d/www.conf
+ExecStartPre=/usr/bin/sed -i 's:^include=.*$:include=%t/fpm@%I/pool.d/*.conf:' %t/fpm@%I/php-fpm.conf
+ExecStartPre=/usr/bin/sed -i 's:^pid =.*$:pid = %t/fpm@%I/php-fpm.pid:' %t/fpm@%I/php-fpm.conf
+
+[Install]
+WantedBy=multi-user.target
