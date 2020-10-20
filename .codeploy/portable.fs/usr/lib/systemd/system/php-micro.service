@@ -1,0 +1,11 @@
+[Unit]
+Requires=php-micro@1234.service
+After=php-micro@1234.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/php -r 'echo "default service listener\n";'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
